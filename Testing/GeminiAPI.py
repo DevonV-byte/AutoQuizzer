@@ -1,20 +1,30 @@
+# This script provides a simple test for the Gemini API to ensure
+# that the GOOGLE_API_KEY is correctly configured and that the API
+# can be successfully called.
+#
+# Created: 2026-03-16
+# Author: Devon Vanaenrode
+
+# --- Imports ---
 
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
 from pathlib import Path
+from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Construct the path to the .env file which is in the parent directory
-dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+# --- Globals ---
 
-# Load environment variables from .env file
-load_dotenv(dotenv_path=dotenv_path)
-
+# Load environment variables from .env file in the parent directory
 # It's recommended to set the GOOGLE_API_KEY as an environment variable
 # for security reasons. This script will read it from the .env file.
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
+dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+load_dotenv(dotenv_path=dotenv_path)
+
+API_KEY = os.getenv("GOOGLE_API_KEY")
+if not API_KEY:
     raise ValueError("GOOGLE_API_KEY not found in .env file or environment variables.")
+
+# --- Helpers ---
 
 def test_gemini_api():
     """
@@ -22,7 +32,7 @@ def test_gemini_api():
     """
     try:
         # 1. Instantiate the model
-        llm = ChatGoogleGenerativeAI(model="gemini-flash-latest", google_api_key=api_key)
+        llm = ChatGoogleGenerativeAI(model="gemini-flash-latest", google_api_key=API_KEY)
 
         # 2. Invoke the model with a simple prompt
         prompt = "Hello, what is the capital of Finland?"
@@ -44,6 +54,8 @@ def test_gemini_api():
 
     except Exception as e:
         print(f"ChatGoogleGenerativeAI test failed: {e}")
+
+# --- Main loop ---
 
 if __name__ == "__main__":
     test_gemini_api()
