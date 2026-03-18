@@ -7,3 +7,8 @@ chromadb
 python-docx
 jupyter
 dotenv
+google-generativeai
+docx2txt
+nbformat
+tqdm
+pytest
