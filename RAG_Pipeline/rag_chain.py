@@ -39,7 +39,7 @@ def get_llm_model():
     if not api_key:
         raise ValueError("GOOGLE_API_KEY not found in environment variables.")
     
-    return ChatGoogleGenerativeAI(model="models/gemini-2.5-flash", google_api_key=api_key)
+    return ChatGoogleGenerativeAI(model="models/gemini-2.5-flash-lite", google_api_key=api_key)
 
 def create_prompt_template(n_questions=5, n_options=3):
     prompt_template = """

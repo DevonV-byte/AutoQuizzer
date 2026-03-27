@@ -1,13 +1,22 @@
+# Orchestrates the full document ingestion pipeline: loads course documents,
+# splits them into chunks, enriches each chunk with game metadata (topic_cluster
+# and difficulty_tier via LLM), generates embeddings, and persists everything
+# to a local ChromaDB collection.
+#
+# Created: 2026-03-27
+# Author: Devon Vanaenrode
+
 # --- Imports ---
 import os
 import time
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from tqdm import tqdm
 import chromadb
 
 from .document_loader import COURSE_DIR, load_course_documents
 from .text_splitter import split_documents
+from .metadata_tagger import tag_chunks_with_metadata
 
 # --- Constants ---
 CHROMA_DB_PATH = "../Database/"
@@ -25,6 +34,16 @@ def get_embeddings_model():
     
     return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=api_key)
 
+def get_llm_model():
+    """
+    Initializes and returns the Gemini generative model used for metadata classification.
+    """
+    load_dotenv()
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY not found in environment variables.")
+    return ChatGoogleGenerativeAI(model="models/gemini-2.5-flash-lite", google_api_key=api_key)
+
 # --- Main Execution ---
 def main():
     """
@@ -40,6 +59,12 @@ def main():
         if not chunks:
             print("No chunks were created from the documents. Exiting.")
             return
+
+        # Tag each chunk with topic_cluster, difficulty_tier, and normalised source
+        print("Tagging chunks with metadata (topic_cluster, difficulty_tier)...")
+        llm = get_llm_model()
+        chunks = tag_chunks_with_metadata(chunks, llm)
+        print("Metadata tagging complete.")
 
         # Initialize embeddings model
         embeddings_model = get_embeddings_model()
