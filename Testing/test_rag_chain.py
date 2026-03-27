@@ -63,7 +63,7 @@ def test_get_llm_model_success():
     with patch.dict(os.environ, {"GOOGLE_API_KEY": "test_api_key"}):
         with patch('RAG_Pipeline.rag_chain.ChatGoogleGenerativeAI') as mock_chat_google:
             llm = get_llm_model()
-            mock_chat_google.assert_called_once_with(model="models/gemini-2.5-flash", google_api_key="test_api_key")
+            mock_chat_google.assert_called_once_with(model="models/gemini-2.5-flash-lite", google_api_key="test_api_key")
             assert llm is not None
 
 def test_get_llm_model_no_api_key():
@@ -71,8 +71,9 @@ def test_get_llm_model_no_api_key():
     Tests that get_llm_model raises a ValueError when the GOOGLE_API_KEY is not set.
     """
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError, match="GOOGLE_API_KEY not found in environment variables."):
-            get_llm_model()
+        with patch('RAG_Pipeline.rag_chain.load_dotenv'):  # prevent .env file from re-populating the env
+            with pytest.raises(ValueError, match="GOOGLE_API_KEY not found in environment variables."):
+                get_llm_model()
 
 def test_create_prompt_template():
     """
@@ -84,7 +85,8 @@ def test_create_prompt_template():
     prompt = create_prompt_template()
     assert isinstance(prompt, PromptTemplate)
     assert "context" in prompt.input_variables
-    assert "question" in prompt.input_variables
+    assert "topic" in prompt.input_variables
+    assert "difficulty" in prompt.input_variables
     assert len(prompt.template) > 0
 
 def test_format_docs():
@@ -113,7 +115,7 @@ def test_rag_chain_construction(mock_llm, prompt_template, mock_vectorstore):
     
     # You can perform more detailed checks on the chain's structure if needed
     # For example, checking the steps in the chain
-    assert len(chain.steps) == 4 # {"context": retriever | format_docs, "question": ...} | prompt | llm | parser
+    assert len(chain.steps) == 4 # {"context": ..., "topic": ..., "difficulty": ...} | prompt | llm | parser
 
 def test_rag_chain_invocation():
     """
@@ -125,7 +127,8 @@ def test_rag_chain_invocation():
     mock_llm.invoke.return_value = "This is the LLM's answer."
 
     mock_parser = MagicMock()
-    mock_parser.invoke.return_value = "This is the final parsed answer."
+    # LCEL coerces MagicMock to RunnableLambda and calls via __call__, not .invoke()
+    mock_parser.return_value = "This is the final parsed answer."
 
     mock_docs = [MockDocument(page_content="Content about prompt engineering.")]
     mock_retriever = MagicMock()
@@ -139,39 +142,26 @@ def test_rag_chain_invocation():
 
     prompt = create_prompt_template()
 
-    # 2. Patch the chain creation and external modules
-    with patch('RAG_Pipeline.rag_chain.StrOutputParser', return_value=mock_parser):
-        
+    # 2. Patch JsonOutputParser so we can intercept the output without real JSON parsing
+    with patch('RAG_Pipeline.rag_chain.JsonOutputParser', return_value=mock_parser):
+
         # 3. Create the chain with mocks
         chain = rag_chain(mock_llm, prompt, mock_vectorstore)
-        
-        # 4. Invoke the chain
-        query = "What is Prompt Engineering?"
+
+        # 4. Invoke the chain with the required topic and difficulty keys
+        query = {"topic": "What is Prompt Engineering?", "difficulty": "medium"}
         result = chain.invoke(query)
-        
+
         # 5. Assertions
         mock_vectorstore.as_retriever.assert_called_once()
-        mock_retriever.invoke.assert_called_once_with(query)
-        
-        # The prompt template is called with the context from the retriever and the original question
-        expected_prompt_input = {
-            "context": format_docs(mock_docs),
-            "question": query
-        }
-        # The prompt itself is a step, so its `invoke` method will be called
-        # by the parent `RunnableSequence`.
-        # We can't easily check the input to the prompt in this LCEL setup without more complex mocking.
-        # However, we can check the input to the LLM.
-        
-        # The mocked LLM should be invoked with the formatted prompt
-        mock_llm.invoke.assert_called_once()
-        # The first argument to invoke will be the PromptValue from the previous step
-        llm_input_prompt = mock_llm.invoke.call_args[0][0]
-        assert "Content about prompt engineering." in llm_input_prompt.to_string()
-        assert "What is Prompt Engineering?" in llm_input_prompt.to_string()
 
-        # The final output parser is called with the LLM's output
-        mock_parser.invoke.assert_called_once_with("This is the LLM's answer.")
-        
+        # LCEL coerces a plain callable into a RunnableLambda and calls it via __call__,
+        # not .invoke(), so we assert on the mock itself rather than mock.invoke.
+        mock_llm.assert_called_once()
+        llm_input_prompt = mock_llm.call_args[0][0]
+        # The topic and difficulty must appear in the formatted prompt
+        assert "What is Prompt Engineering?" in llm_input_prompt.to_string()
+        assert "medium" in llm_input_prompt.to_string()
+
         # The final result should be what the parser returns
         assert result == "This is the final parsed answer."

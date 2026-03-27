@@ -1,8 +1,8 @@
 # Create the core RAG chain using LCEL
-# 
+#
 # Created: 2026-03-20
 # Author: Devon Vanaenrode
-# Updated: 2026-03-25
+# Updated: 2026-03-27
 # --- Imports ---
 import os
 from dotenv import load_dotenv
@@ -11,7 +11,6 @@ import chromadb
 import json
 
 from langchain_core.prompts import PromptTemplate
-from langchain_classic.chains import RetrievalQA
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.runnables import RunnablePassthrough
@@ -41,21 +40,14 @@ def get_llm_model():
     
     return ChatGoogleGenerativeAI(model="models/gemini-2.5-flash-lite", google_api_key=api_key)
 
-def create_prompt_template(n_questions=5, n_options=3):
-    prompt_template = """
-    Use the information from the documents to answer the question at the end. If you don't know the answer, just say that you don't know, definately do not try to make up an answer.
-
-    {context}
-
-    Question: {question}
-    """
-    
+def create_prompt_template(n_questions=5, n_options=3, difficulty="medium"):
     quiz_template = """
     You are a quiz master. The user specifies which topic they want to be quizzed on. Use the information from the documents to construct a quiz:
-    Number of question: {n_questions}
+    Number of questions: {n_questions}
     Number of options per question: {n_options}
+    Difficulty: {difficulty}
     JSON structure (x signals placeholders):
-        [ 'quiz_title': x, 'questions':
+        [ 'quiz_title': x, 'difficulty': x, 'questions':
             [
                 'question_number': x,
                 'question': x,
@@ -77,8 +69,8 @@ def create_prompt_template(n_questions=5, n_options=3):
     """
 
     prompt_template = PromptTemplate(
-        template=quiz_template, 
-        input_variables=["context", "topic"],
+        template=quiz_template,
+        input_variables=["context", "topic", "difficulty"],
         partial_variables={"n_questions": n_questions, "n_options": n_options}
     )
 
@@ -86,24 +78,30 @@ def create_prompt_template(n_questions=5, n_options=3):
 
 def rag_chain(llm_model, prompt_template, vectorstore):
     retriever = vectorstore.as_retriever()
-    
+
     # Creates a LangChain Runnable using LCEL
+    # Input must be a dict with keys: "topic" and "difficulty"
     qa_chain = (
-        {"context": retriever | format_docs, "topic": RunnablePassthrough()}
+        {
+            "context": (lambda x: x["topic"]) | retriever | format_docs,
+            "topic": lambda x: x["topic"],
+            "difficulty": lambda x: x["difficulty"],
+        }
         | prompt_template
         | llm_model
         | JsonOutputParser()
     )
-    
+
     return qa_chain
 
-def get_quiz_generation_chain():
+def get_quiz_generation_chain(n_questions=3, n_options=3, difficulty="medium"):
     """
     Initializes and returns the quiz generation RAG chain.
+    Accepts n_questions, n_options, and difficulty to configure the prompt template.
     """
     try:
         llm_model = get_llm_model()
-        prompt = create_prompt_template(3, 3) # Using default values for now
+        prompt = create_prompt_template(n_questions, n_options, difficulty)
         embeddings_model = embeddings.get_embeddings_model()
         vectorstore = Chroma(
             persist_directory=CHROMA_DB_PATH,
@@ -112,7 +110,6 @@ def get_quiz_generation_chain():
         )
         return rag_chain(llm_model, prompt, vectorstore)
     except (ValueError, FileNotFoundError) as e:
-        # Should probably log this or handle it better
         print(f"Error initializing quiz generation chain: {e}")
         return None
     except Exception as e:
@@ -128,8 +125,7 @@ def main():
 
     if RAG_chain:
         # Test our retrievalQA
-        query = "Prompt Engineering"
-        quiz = RAG_chain.invoke(query)
+        quiz = RAG_chain.invoke({"topic": "Prompt Engineering", "difficulty": "medium"})
         print(quiz)
         if quiz and "quiz_title" in quiz:
             print(quiz["quiz_title"])
