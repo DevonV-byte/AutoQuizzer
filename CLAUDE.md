@@ -26,7 +26,8 @@ All Python files must follow this section organization:
 
 ```
 
-
+### File locations
+All new files (code, databases, ...) must be put in the Code directory.
 
 ### File Headers
 

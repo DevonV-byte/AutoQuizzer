@@ -8,5 +8,5 @@ Database
 *.pyc
 
 # Files
-GEMINI.md
+CLAUDE.md
 Deploy_instructions.txt
