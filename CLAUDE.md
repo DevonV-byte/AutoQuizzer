@@ -40,7 +40,8 @@ Every file must start with a comment block containing:
 
 Every time the files is updated, the comment block must be updated accordingly.
 
-
+### Virtual Environment
+Whenever you install dependencies and packages, use .venv in Code directory.
 
 ### Code Style
 

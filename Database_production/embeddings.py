@@ -19,7 +19,8 @@ from .text_splitter import split_documents
 from .metadata_tagger import tag_chunks_with_metadata
 
 # --- Constants ---
-CHROMA_DB_PATH = "../Database/"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHROMA_DB_PATH = os.path.join(SCRIPT_DIR, "..", "Database")
 COLLECTION_NAME = "autoquizzer_collection"
 
 # --- Functions ---

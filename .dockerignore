@@ -16,3 +16,6 @@ __pycache__/
 
 # Course materials unrelated to the application
 IBM RAG and Agentic AI/
+
+# Streamlit frontend — served separately, not part of the API image
+Frontend/
