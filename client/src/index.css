@@ -1,0 +1,45 @@
+/* Global reset and base styles for the Grimoire game client.
+   Dark RPG theme — monospace throughout, black background.
+   Created: 2026-04-02
+   Author: Devon Vanaenrode */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --border: #2a2a3a;
+  --text: #c8c8d8;
+  --text-dim: #6b6b88;
+  --accent: #9b59ff;
+  --accent-glow: rgba(155, 89, 255, 0.35);
+  --danger: #ff4444;
+  --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--mono);
+  cursor: pointer;
+}

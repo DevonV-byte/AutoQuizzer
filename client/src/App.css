@@ -1,0 +1,119 @@
+/* Layout styles for the three Grimoire screens.
+   Each screen fills the full viewport.
+   Created: 2026-04-02
+   Author: Devon Vanaenrode */
+
+/* ── Shared screen shell ─────────────────────────────── */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+/* ── Landing ─────────────────────────────────────────── */
+
+.landing__title {
+  font-size: 48px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 24px var(--accent-glow);
+  margin-bottom: 8px;
+}
+
+.landing__subtitle {
+  color: var(--text-dim);
+  margin-bottom: 40px;
+}
+
+.landing__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.landing__file-label {
+  display: block;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  text-align: center;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.landing__file-label:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.landing__file-input {
+  display: none;
+}
+
+.landing__file-list {
+  color: var(--text-dim);
+  font-size: 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.landing__submit {
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.landing__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.landing__submit:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.landing__error {
+  color: var(--danger);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Loading ─────────────────────────────────────────── */
+
+.loading__text {
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Game ────────────────────────────────────────────── */
+
+.game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #000;
+}
