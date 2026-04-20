@@ -1,20 +1,18 @@
-// Typed fetch client for the Grimoire FastAPI backend.
-// All interfaces mirror the Pydantic models in Code/Backend/main.py
-// (canonical types live in Code/types/api.ts, generated from the OpenAPI spec).
-// Functions map 1-to-1 with the 8 API endpoints.
+// Typed fetch client for the Grimoire AutoQuizzer backend.
+// All interfaces mirror the Pydantic models in Code/Backend/main.py.
+// Functions map 1-to-1 with the active API endpoints.
+//
 // Created: 2026-04-02
+// Updated: 2026-04-20 — added EncounterBatchRequest/Response, PlayerProgress types;
+//                        updated AnswerRequest/Response; added FileEntry/FilesResponse
+//                        and getFiles/deleteFile/clearAllFiles functions
 // Author: Devon Vanaenrode
 
 // ---------------------------------------------------------------------------
-// Shared enums
+// Shared types
 // ---------------------------------------------------------------------------
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
-export type EnemyTier = 'Slime' | 'Skeleton' | 'Dragon'
-
-// ---------------------------------------------------------------------------
-// Shared sub-shapes
-// ---------------------------------------------------------------------------
 
 export interface DifficultyInfo {
   key: Difficulty
@@ -22,13 +20,6 @@ export interface DifficultyInfo {
   label: string
   /** Bloom's taxonomy guidance for this tier */
   description: string
-}
-
-export interface Zone {
-  /** Matches the topic_cluster metadata value in ChromaDB */
-  name: string
-  enemy_tier: EnemyTier
-  chunk_count: number
 }
 
 export interface QuizQuestion {
@@ -57,7 +48,15 @@ export interface EncounterRequest {
   difficulty?: Difficulty
 }
 
+export interface EncounterBatchRequest {
+  player_id: string
+  zone: string
+  difficulty?: Difficulty
+}
+
 export interface AnswerRequest {
+  player_id: string
+  zone: string
   question: string
   correct_answer: string
   player_answer: string
@@ -89,10 +88,6 @@ export interface UploadResponse {
   chunks_added: number
 }
 
-export interface GenerateWorldResponse {
-  zones: Zone[]
-}
-
 export interface ZonesResponse {
   zones: string[]
 }
@@ -106,6 +101,14 @@ export interface EncounterResponse {
   explanation: string
 }
 
+export interface EncounterBatchResponse {
+  zone: string
+  difficulty: Difficulty
+  /** Which quiz batch this is: 1 = first 5 questions, 2 = second 5, etc. */
+  quiz_number: number
+  questions: EncounterResponse[]
+}
+
 export interface AnswerResponse {
   correct: boolean
   /** XP gained: 10/20/30 for easy/medium/hard on correct; 0 on wrong */
@@ -114,6 +117,40 @@ export interface AnswerResponse {
   hp_delta: number
   difficulty: Difficulty
   explanation: string
+  /** True when the 5th answer of a quiz batch is recorded */
+  quiz_complete: boolean
+  /** Correct answers in the completed quiz (0–5); null if not yet complete */
+  quiz_score: number | null
+  /** True when all 5 quiz batches in the level are passed at ≥ 4/5 */
+  level_complete: boolean
+}
+
+export interface PlayerProgressEntry {
+  zone: string
+  difficulty: Difficulty
+  questions_answered: number
+  correct_count: number
+  quizzes_passed: number
+  level_complete: boolean
+}
+
+export interface PlayerProgressResponse {
+  player_id: string
+  progress: PlayerProgressEntry[]
+}
+
+export interface FileEntry {
+  filename: string
+  /** ISO 8601 UTC timestamp */
+  uploaded_at: string
+}
+
+export interface FilesResponse {
+  files: FileEntry[]
+}
+
+export interface MessageResponse {
+  message: string
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +192,6 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const res = await fetch(`${BASE}${path}`, init)
 
   if (!res.ok) {
-    // FastAPI returns { detail: string } for 4xx/5xx
     let detail = res.statusText
     try {
       const json = (await res.json()) as { detail?: string }
@@ -169,7 +205,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return res.json() as Promise<T>
 }
 
-const get = <T>(path: string) => request<T>('GET', path)
+const get  = <T>(path: string)               => request<T>('GET',  path)
 const post = <T>(path: string, body?: unknown) => request<T>('POST', path, body)
 
 // ---------------------------------------------------------------------------
@@ -192,15 +228,30 @@ export const uploadDocuments = (files: File[]): Promise<UploadResponse> => {
   return post<UploadResponse>('/api/upload', form)
 }
 
-/** POST /generate-world — build game zones from ChromaDB metadata */
-export const generateWorld = () => post<GenerateWorldResponse>('/api/generate-world')
-
-/** GET /zones — list available zone names */
+/** GET /zones — list topic names derived from uploaded documents */
 export const getZones = () => get<ZonesResponse>('/api/zones')
 
-/** POST /encounter — generate a single combat question for a zone */
+/** POST /encounter — generate a single quiz question for a topic (legacy) */
 export const encounter = (req: EncounterRequest) =>
   post<EncounterResponse>('/api/encounter', req)
 
-/** POST /answer — evaluate player answer, returns XP/HP deltas */
+/** POST /encounter/batch — fetch next 5 questions from the pre-generated pool */
+export const encounterBatch = (req: EncounterBatchRequest) =>
+  post<EncounterBatchResponse>('/api/encounter/batch', req)
+
+/** POST /answer — evaluate player answer, returns correctness, score deltas, and progress */
 export const submitAnswer = (req: AnswerRequest) => post<AnswerResponse>('/api/answer', req)
+
+/** GET /player/{player_id}/progress — per-zone/difficulty progress for a player */
+export const getPlayerProgress = (playerId: string) =>
+  get<PlayerProgressResponse>(`/api/player/${playerId}/progress`)
+
+/** GET /files — list all files currently in the database */
+export const getFiles = () => get<FilesResponse>('/api/files')
+
+/** DELETE /files/{filename} — remove a specific file and its ChromaDB chunks */
+export const deleteFile = (filename: string) =>
+  request<MessageResponse>('DELETE', `/api/files/${encodeURIComponent(filename)}`)
+
+/** DELETE /files — wipe the entire database (ChromaDB + all progress) */
+export const clearAllFiles = () => request<MessageResponse>('DELETE', '/api/files')

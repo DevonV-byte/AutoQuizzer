@@ -20,6 +20,7 @@
   --accent: #9b59ff;
   --accent-glow: rgba(155, 89, 255, 0.35);
   --danger: #ff4444;
+  --success: #3ecf8e;
   --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
 

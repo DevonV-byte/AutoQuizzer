@@ -1,5 +1,6 @@
-/* Layout styles for the three Grimoire screens.
+/* Layout styles for the Grimoire screens.
    Each screen fills the full viewport.
+   Updated: 2026-04-10 — replaced .game block with .quiz styles (Phase 3 rollback)
    Created: 2026-04-02
    Author: Devon Vanaenrode */
 
@@ -49,9 +50,11 @@
   transition: border-color 0.2s;
 }
 
-.landing__file-label:hover {
+.landing__file-label:hover,
+.landing__file-label--dragging {
   border-color: var(--accent);
   color: var(--text);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .landing__file-input {
@@ -108,12 +111,354 @@
   50%       { opacity: 0.3; }
 }
 
-/* ── Game ────────────────────────────────────────────── */
+/* ── Quiz ────────────────────────────────────────────── */
 
-.game {
+.quiz__title {
+  font-size: 36px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 24px var(--accent-glow);
+  margin-bottom: 6px;
+}
+
+.quiz__subtitle {
+  color: var(--text-dim);
+  margin-bottom: 32px;
+}
+
+/* Setup layout */
+
+.quiz__setup {
   display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.quiz__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz__section-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.quiz__options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quiz__chip {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.quiz__chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.quiz__chip--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Score bar */
+
+.quiz__scorebar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #000;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+.quiz__zone-tag {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.quiz__score {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Question card */
+
+.quiz__card {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quiz__question {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.quiz__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz__answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.quiz__answer:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+.quiz__answer:disabled {
+  cursor: default;
+}
+
+.quiz__answer--correct {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.quiz__answer--wrong {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.quiz__answer-letter {
+  font-weight: 700;
+  min-width: 18px;
+  color: var(--text-dim);
+}
+
+.quiz__answer--correct .quiz__answer-letter,
+.quiz__answer--wrong   .quiz__answer-letter {
+  color: inherit;
+}
+
+/* Feedback */
+
+.quiz__feedback {
+  padding: 14px 16px;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+}
+
+.quiz__feedback--correct {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+}
+
+.quiz__feedback--wrong {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.quiz__feedback-verdict {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.quiz__feedback--correct .quiz__feedback-verdict { color: var(--success); }
+.quiz__feedback--wrong   .quiz__feedback-verdict { color: var(--danger);  }
+
+.quiz__feedback-explanation {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Actions row */
+
+.quiz__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Shared buttons */
+
+.quiz__btn-primary {
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.quiz__btn-primary:hover { opacity: 0.85; }
+
+.quiz__btn-ghost {
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.quiz__btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.quiz__error {
+  color: var(--danger);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Results ─────────────────────────────────────────── */
+
+.results__title {
+  font-size: 36px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 24px var(--accent-glow);
+  margin-bottom: 24px;
+}
+
+.results__overall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 40px;
+}
+
+.results__overall-score {
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.results__overall-label {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.results__table {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+}
+
+.results__th {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.results__th--topic { width: 60%; }
+
+.results__row:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.results__td {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.results__td--topic {
+  color: var(--text);
+}
+
+.results__td--pct {
+  font-weight: 700;
+}
+
+.results__pct--good { color: var(--success); }
+.results__pct--low  { color: var(--danger);  }
+
+.results__actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Mobile (≤ 480 px) ───────────────────────────────── */
+
+@media (max-width: 480px) {
+  /* Scale down large headings */
+  .landing__title  { font-size: 32px; letter-spacing: 2px; }
+  .quiz__title     { font-size: 26px; letter-spacing: 2px; }
+  .results__title  { font-size: 26px; letter-spacing: 2px; }
+
+  /* Give chips an explicit min-height to meet the 44 px touch target */
+  .quiz__chip {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Stack action buttons vertically and stretch them full-width */
+  .quiz__actions,
+  .results__actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .quiz__btn-primary,
+  .quiz__btn-ghost {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Ensure primary button on setup screen also stretches */
+  .quiz__setup .quiz__btn-primary { width: 100%; }
+
+  /* Allow the results table to scroll horizontally on narrow screens */
+  .results__table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }

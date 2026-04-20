@@ -6,7 +6,7 @@
 #
 # Created: 2026-03-20
 # Author: Devon Vanaenrode
-# Updated: 2026-03-30
+# Updated: 2026-04-20 — prompt instructs LLM to vary correct answer letter; example changed to "B"
 # --- Imports ---
 import os
 from dotenv import load_dotenv
@@ -97,6 +97,7 @@ Context:
 {context}
 
 Return ONLY a valid JSON object. No markdown, no code fences, no explanatory text before or after.
+Vary which letter is the correct answer across questions — do not always use "A".
 Use this exact structure:
 {{
     "quiz_title": "...",
@@ -106,7 +107,7 @@ Use this exact structure:
             "question_number": 1,
             "question": "...",
             "options": {{"A": "...", "B": "...", "C": "..."}},
-            "answer": "A",
+            "answer": "B",
             "explanation": "..."
         }}
     ]
