@@ -1,5 +1,5 @@
 # Grimoire
-Grimoire turns any uploaded document into a retro 2D RPG world. Course notes, textbooks, coding references, or math summaries become explorable zones populated with enemies, NPCs, and quests. Every combat encounter is a quiz powered by a RAG pipeline. Every wrong answer costs HP. Every victory earns XP and loot.
+Grimoire turns your documents into an AI that quizzes you on them, and gets harder as you get smarter. Upload course notes, textbooks, coding references, or that PDF you've been pretending to read. Grimoire ingests, chunks, and embeds the content, then generates quiz questions pulled directly from the source material. Get it right? The difficulty climbs. Get it wrong? That question is coming back later. Spaced repetition doesn't forget, even if you did. Under the hood: a retrieval-augmented generation pipeline with cross-encoder re-ranking for precision, an automated evaluation framework that measures retrieval quality and question relevance, and adaptive difficulty that tracks your performance per topic. Built with FastAPI, LangChain (LCEL), ChromaDB, and Gemini. Deployed on GCP Cloud Run with Prometheus/Grafana monitoring and CI/CD via GitHub Actions.
 
 ## Getting Started
 
